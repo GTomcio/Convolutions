@@ -67,7 +67,7 @@ class convolution(nn.Module):
             kernel_size=3,
       )
             self.pool = nn.MaxPool2d(kernel_size=2)
-            self.fc = nn.Linear(8 * 13 * 13 * 10, 1352)
+            self.fc = nn.Linear(8 * 13 * 13, 10)
 
       def forward(self, x):
             x = self.conv1(x)
@@ -76,12 +76,61 @@ class convolution(nn.Module):
             x = torch.flatten(x, start_dim=1)
 
             return self.fc(x)
-
+#load model to DEVICE
 model = convolution().to(DEVICE)
 
-images, labels = next(iter(train_loader))
-scores = model(images.to(DEVICE))
+#select loss function and optimizer
+criterion = nn.CrossEntropyLoss()
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01, momentum=0.9)
 
-print("input batch:", images.shape)
-print("score batch:", scores.shape)
+#training loop
+total_train = 0
 
+epochs = int(input("epochs = "))
+for epoch in range(epochs):
+      model.train()
+      running_loss = 0.0
+      for images, labels in train_loader:
+            images = images.to(DEVICE)
+            labels = labels.to(DEVICE)
+
+            optimizer.zero_grad()
+            scores = model(images)
+            loss = criterion(scores, labels)
+            loss.backward()
+            optimizer.step()
+
+            total_train += images.size(0)
+
+            running_loss += loss.item() * images.size(0)
+
+      mean_loss = running_loss / total_train
+      print(f"epoch {epoch + 1} mean loss={mean_loss:.4f}")
+
+#testing pass
+model.eval()
+test_loss_sum = 0.0
+correct = 0
+total = 0
+
+with torch.no_grad():
+      for test_images, test_labels in test_loader:
+            test_images = test_images.to(DEVICE)
+            test_labels = test_labels.to(DEVICE)
+
+      test_scores = model(test_images)
+      batch_loss = criterion(test_scores, test_labels)
+
+      test_loss_sum += batch_loss.item() * test_images.size(0)
+      correct += (test_scores.argmax(dim=1) == test_labels).sum().item()
+      total += test_labels.size(0)
+
+mean_test_loss = test_loss_sum / total
+test_accuracy = correct / total
+
+print(
+      f"epoch {epoch + 1} "
+      f"train loss={mean_loss:.4f} "
+      f"test loss={mean_test_loss:.4f} "
+      f"test accuracy={test_accuracy:.01%}"
+)
