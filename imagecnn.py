@@ -1,6 +1,5 @@
 from pathlib import Path
 import struct
-from typing import Any
 import numpy as np
 import torch
 import torch.nn as nn
