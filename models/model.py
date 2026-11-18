@@ -81,8 +81,10 @@ load_parameters("cnn.pth")
 #forward
 counter = 1
 with torch.no_grad():
-     for images in image_loader:
+     for (images,) in image_loader:
         images = images.to(DEVICE)
         model_output = model(images)
-        print(f"image: {counter}, output: {model_output}")
+        probs = torch.softmax(model_output, dim = 1)
+        confidence, prediction = torch.max(probs, dim = 1)
+        print(f"image {counter}: digit {prediction.item()}, probability: {confidence.item():.2%}")
         counter += 1
