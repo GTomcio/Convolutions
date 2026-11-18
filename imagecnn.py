@@ -87,6 +87,7 @@ class convolution(nn.Module):
                   nn.Linear(200, 100),
                   nn.ReLU(),
                   nn.Linear(100, 10),
+                  nn.Softmax(),
             )
 
       def forward(self, x):
