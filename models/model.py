@@ -1,17 +1,19 @@
-from pathlib import Path
+#imports
 import struct
-from typing import Any
+from pathlib import Path
 import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
-import matplotlib.pyplot as plt
 
+#global config
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"using {DEVICE}")
 
+#define data_dir
 data_dir = Path(__file__).resolve().parent / "data"
 
+#define loading inputs
 def load_images(filename):
     with (data_dir / filename).open("rb") as file:
         magic, num, rows, cols = struct.unpack(">IIII", file.read(16))
@@ -25,15 +27,24 @@ def load_images(filename):
     images = torch.from_numpy(image_bytes).reshape(num, rows * cols)
     return images.to(device=DEVICE, dtype=torch.float32).div_(255.0)
 
+#define loading model parameters
+def load_parameters(filename):
+    models_path = data_dir / filename
+    state_dict = torch.load(models_path, map_location=DEVICE)
+    model.load_state_dict(state_dict)
+
+#define restructuring of images
 def formatter(image_file):
     images = load_images(image_file).reshape(-1, 1, 28, 28).cpu()
     dataset = TensorDataset(images)
     return DataLoader(dataset)
 
+#final image loader funct
 image_loader = formatter(
     "t10k-images-idx3-ubyte"
 )
 
+#define model
 class convolution(nn.Module):
       def __init__(self):
             super().__init__()
@@ -53,7 +64,6 @@ class convolution(nn.Module):
                   nn.Linear(200, 100),
                   nn.ReLU(),
                   nn.Linear(100, 10),
-                  nn.Softmax(),
             )
 
       def forward(self, x):
@@ -64,8 +74,11 @@ class convolution(nn.Module):
 
             return self.fc(x)
 
+#load model
 model = convolution().to(DEVICE)
+load_parameters("cnn.pth")
 
+#forward
 counter = 1
 with torch.no_grad():
      for images in image_loader:
