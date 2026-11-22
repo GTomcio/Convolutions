@@ -5,6 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
+import matplotlib as plt
 
 #global config
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
